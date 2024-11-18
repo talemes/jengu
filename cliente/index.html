@@ -222,7 +222,136 @@ ${r}`),b(r)}function $e(n,e=!1){return ra(Ro(n),Pn(),Mn(),e)}class sa extends fe
 &quot;Você me encontrou, estava ansioso para que vissem meu mundo, poucos conseguiram sair depois que entraram, você está pronto para começar?&quot;
 
 &gt; [[Sim, eu consigo!-&gt;inicio 1.1]]
-&gt; [[Não, ainda não estou doido o suficiente.-&gt;inicio 1.2]]</tw-passagedata><tw-passagedata pid="2" name="inicio 1.1" tags="" position="400,300" size="100,100">Dia 1 - Meu Deus (para aqueles que não são ateus) onde eu estou? isso foi o que você pensou ao perceber que estava em uma floresta que se assemelha muito ao filme que vocês assistiam juntos &quot;JUMANJI&quot;. Mas opa, seu amigo não está com você!! 
+&gt; [[Não, ainda não estou doido o suficiente.-&gt;inicio 1.2]]
+
+[JavaScript]
+window.setup = {}
+
+setup.loadError = function (oError) {
+  throw new URIError(
+    &#39;The script &#39; + oError.target.src + &quot; didn&#39;t load correctly.&quot;
+  )
+}
+
+setup.loadScript = function (url, onloadFunction) {
+  const newScript = document.createElement(&#39;script&#39;)
+  newScript.onerror = setup.loadError
+  if (onloadFunction) {
+    newScript.onload = onloadFunction
+  }
+  document.head.appendChild(newScript)
+  newScript.async = true
+  newScript.src = url
+}
+
+const audio = document.getElementById(&#39;conversa&#39;)
+console.log(&#39;audio&#39;, audio)
+
+const iceServers = {
+  iceServers: [
+    {
+      urls: &#39;stun:feira-de-jogos.dev.br&#39;
+    },
+    {
+      urls: &#39;turn:feira-de-jogos.dev.br&#39;,
+      username: &#39;adcipt20242&#39;,
+      credential: &#39;adcipt20242&#39;
+    }
+  ]
+}
+
+let midias
+navigator.mediaDevices.getUserMedia({ video: false, audio: true })
+  .then((stream) =&gt; {
+    midias = stream
+    console.log(&#39;midias&#39;, midias)
+  })
+  .catch((error) =&gt; console.error(error))
+
+setup.loadScript(&#39;https://cdn.socket.io/4.8.0/socket.io.min.js&#39;, () =&gt; {
+  let socket
+  if (window.location.host === &#39;feira-de-jogos.dev.br&#39;) {
+    socket = io({ path: &#39;/adcipt20242/socket.io/&#39; })
+  } else {
+    socket = io()
+  }
+
+  const sala = engine.state.get(&#39;sala&#39;)
+  console.log(&#39;sala&#39;, sala)
+
+  socket.on(&#39;connect&#39;, () =&gt; {
+    socket.emit(&#39;entrar-na-sala&#39;, sala)
+  })
+
+  socket.on(&#39;jogadores&#39;, (jogadores) =&gt; {
+    console.log(jogadores)
+    if (jogadores.segundo) {
+      if (jogadores.primeiro === socket.id) {
+        const remoteConnection = new RTCPeerConnection(iceServers)
+        const dadosJogo = remoteConnection.createDataChannel(&#39;dadosJogo&#39;, { negotiated: true, id: 0 })
+        console.log(&#39;remoteConnection&#39;, remoteConnection)
+        console.log(&#39;dadosJogo&#39;, dadosJogo)
+
+        remoteConnection.onicecandidate = function ({ candidate }) {
+          candidate &amp;&amp; socket.emit(&#39;candidate&#39;, sala, candidate)
+        }
+
+        remoteConnection.ontrack = function ({ streams: [midia] }) {
+          audio.srcObject = midia
+          console.log(&#39;audio.srcObject&#39;, audio.srcObject)
+        }
+
+        if (midias) {
+          midias.getTracks()
+            .forEach((track) =&gt; remoteConnection.addTrack(track, midias))
+        }
+
+        socket.on(&#39;offer&#39;, (description) =&gt; {
+          remoteConnection.setRemoteDescription(description)
+            .then(() =&gt; remoteConnection.createAnswer())
+            .then((answer) =&gt; remoteConnection.setLocalDescription(answer))
+            .then(() =&gt; socket.emit(&#39;answer&#39;, sala, remoteConnection.localDescription))
+        })
+
+        socket.on(&#39;candidate&#39;, (candidate) =&gt; {
+          remoteConnection.addIceCandidate(candidate)
+        })
+      } else if (jogadores.segundo === socket.id) {
+        const localConnection = new RTCPeerConnection(iceServers)
+        const dadosJogo = localConnection.createDataChannel(&#39;dadosJogo&#39;, { negotiated: true, id: 0 })
+        console.log(&#39;localConnection&#39;, localConnection)
+        console.log(&#39;dadosJogo&#39;, dadosJogo)
+
+        localConnection.onicecandidate = function ({ candidate }) {
+          candidate &amp;&amp; socket.emit(&#39;candidate&#39;, sala, candidate)
+        }
+
+        localConnection.ontrack = function ({ streams: [stream] }) {
+          audio.srcObject = stream
+          console.log(&#39;audio.srcObject&#39;, audio.srcObject)
+        }
+
+        if (midias) {
+          midias.getTracks()
+            .forEach((track) =&gt; localConnection.addTrack(track, midias))
+        }
+
+        localConnection.createOffer()
+          .then((offer) =&gt; localConnection.setLocalDescription(offer))
+          .then(() =&gt; socket.emit(&#39;offer&#39;, sala, localConnection.localDescription))
+
+        socket.on(&#39;answer&#39;, (description) =&gt; {
+          localConnection.setRemoteDescription(description)
+        })
+
+        socket.on(&#39;candidate&#39;, (candidate) =&gt; {
+          localConnection.addIceCandidate(candidate)
+        })
+      }
+    }
+  })
+})
+[continued]</tw-passagedata><tw-passagedata pid="2" name="inicio 1.1" tags="" position="400,300" size="100,100">Dia 1 - Meu Deus (para aqueles que não são ateus) onde eu estou? isso foi o que você pensou ao perceber que estava em uma floresta que se assemelha muito ao filme que vocês assistiam juntos &quot;JUMANJI&quot;. Mas opa, seu amigo não está com você!! 
 
 O que você faz primeiro?
 
@@ -230,144 +359,182 @@ O que você faz primeiro?
 &gt; [[Ir para a trilha a direita-&gt;dia 1.2]]
 &gt; [[Ir atrás de rastros do seu amigo-&gt;dia 1.3]] </tw-passagedata><tw-passagedata pid="3" name="inicio 1.2" tags="" position="650,300" size="100,100">Este aparelho está totalmente grudado a você, sem escapatoria ou você joga ou você joga
 
-[[Bom, então vamos.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="4" name="dia 1.1" tags="" position="325,450" size="100,100">Você começa a andar e  gritar o nome de (amigo) percebe que esta sendo em vão e acaba escutando alguns barulhos vindos da floresta, assustado você decide 
+&gt;[[Bom, então vamos.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="4" name="dia 1.1" tags="" position="325,450" size="100,100">Você começa a andar e  gritar o nome de (amigo) percebe que esta sendo em vão e acaba escutando alguns barulhos vindos da floresta, assustado você decide 
 O que fazer?
-[[andar mais para achar um local seguro-&gt;Dia 1.4]]
-[[Ir dormir e procura-lo ao amanhecer.-&gt;Dia 2]]</tw-passagedata><tw-passagedata pid="5" name="dia 1.2" tags="" position="500,450" size="100,100">
+
+&gt;[[andar mais para achar um local seguro-&gt;Dia 1.4]]
+&gt;[[Ir dormir e procura-lo ao amanhecer.-&gt;Dia 2]]</tw-passagedata><tw-passagedata pid="5" name="dia 1.2" tags="" position="500,450" size="100,100">
 Você anda um pouco, mas percebe que está perdido. O sol já está se pondo e sua fome começa a aumentar, tornando-se uma preocupação constante em sua mente. As sombras da floresta ao redor se alongam, e a noite parece se aproximar mais rápido do que você gostaria. Você sabe que precisa tomar uma decisão.
-[[descançar onde está, e buscar comida ao amanhecer-&gt;Dia 2]] </tw-passagedata><tw-passagedata pid="6" name="dia 1.3" tags="" position="650,425" size="100,100">Está vendo algumas pegadas no chão, mas estão tão fracas que você não tem certeza se realmente é do (seu amigo) mesmo assim continua seguindo-as, assim elas o leva alugar nenhum, ja está tarde o sol está se pondo,
+
+&gt;[[descançar onde está, e buscar comida ao amanhecer-&gt;Dia 2]] </tw-passagedata><tw-passagedata pid="6" name="dia 1.3" tags="" position="650,425" size="100,100">Está vendo algumas pegadas no chão, mas estão tão fracas que você não tem certeza se realmente é do (seu amigo) mesmo assim continua seguindo-as, assim elas o leva alugar nenhum, ja está tarde o sol está se pondo,
 você prefere
 
-[[andar mais para achar um local seguro-&gt;Dia 1.4]]
-[[ descançar onde está, a final já está tarde-&gt;Dia 2]] </tw-passagedata><tw-passagedata pid="7" name="Dia 1.4" tags="" position="325,625" size="100,100">Dia 1.4 - Está escurecendo, você está com medo e por conta da adrenalina esqueceu que sentia fome, ja esta horas sem comer e
+&gt;[[andar mais para achar um local seguro-&gt;Dia 1.4]]
+&gt;[[ descançar onde está, a final já está tarde-&gt;Dia 2]] </tw-passagedata><tw-passagedata pid="7" name="Dia 1.4" tags="" position="325,625" size="100,100">Dia 1.4 - Está escurecendo, você está com medo e por conta da adrenalina esqueceu que sentia fome, ja esta horas sem comer e
 noite parece se aproximar mais rápido do que você gostaria. Você sabe que precisa tomar uma decisão.
 
 Seu estômago ronca e você sente que não pode mais esperar.
 
-[[ir atras de comida rápido.-&gt;dia 1.5]]
-[[Descançar e buscar comida ao amanhecer.-&gt;Dia 2]]</tw-passagedata><tw-passagedata pid="8" name="Dia 2" tags="" position="675,625" size="100,100">Dia 2 - Definitivamente ter dormido a céu aberto não foi uma boa escolha, um urso te atacou enquanto voce estava sonhando.
+&gt;[[ir atras de comida rápido.-&gt;dia 1.5]]
+&gt;[[Descançar e buscar comida ao amanhecer.-&gt;Dia 2]]</tw-passagedata><tw-passagedata pid="8" name="Dia 2" tags="" position="675,625" size="100,100">Dia 2 - Definitivamente ter dormido a céu aberto não foi uma boa escolha, um urso te atacou enquanto voce estava sonhando.
 
 Você morreu.
 
-[[Voltar para o inicio.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="9" name="dia 1.5" tags="" position="475,575" size="100,100">Mesmo estando mais ecuro, você econtra uma árvore frutifera que por sorte ja tinha ouvido falar, logo, sem medo começou a comer as frutinhas para sassear um pouco a fome, depois disso sentiu que ja estava cansado e precisava dormir 
+&gt;[[Voltar para o inicio.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="9" name="dia 1.5" tags="" position="475,575" size="100,100">Mesmo estando mais ecuro, você econtra uma árvore frutifera que por sorte ja tinha ouvido falar, logo, sem medo começou a comer as frutinhas para sassear um pouco a fome, depois disso sentiu que ja estava cansado e precisava dormir 
 você ja sabe o que fazer
-[[ deitar em um local aparentemente seguro e descansar  para procurar (amigo) pela manha -&gt; Dia 3]] 
+
+&gt;[[ deitar em um local aparentemente seguro e descansar  para procurar (amigo) pela manha -&gt; Dia 3]] 
 </tw-passagedata><tw-passagedata pid="10" name=" Dia 3" tags="" position="100,675" size="100,100">CHECKPOINT
 
 Dia 2- Por sorte a noite foi tranquila, tirando as picadas de insetos que voce levou, conseguiu abastecer suas energias novamente, enttao decide andar mais um pouco ate que escuta alguem chamar, &quot;dr espere ai, dr me espere&quot;
-[[Ir em direção a este homem que te chama -&gt;dia 3.1]]
-[[ andar mais de pressa para dispistar ele -&gt; dia 3.2]]
+
+&gt;[[Ir em direção a este homem que te chama -&gt;dia 3.1]]
+&gt;[[ andar mais de pressa para dispistar ele -&gt; dia 3.2]]
 </tw-passagedata><tw-passagedata pid="11" name="dia 3.1" tags="" position="325,800" size="100,100">Dia 2- você não precisa se esforçar muito ate ele chegar em voce, as perninhas curtinhas porem ligeras do mesmoo, fizeram o trabalho todo, ainda sem estar totalmete proximo a voce ele ja começa a falar de longe &quot; que bom Dr, que bom que encontrei você! Eu estava ansioso para conversar com você, sou nigel e esttou a seu dispor&quot;
 sobre o que ele está falando, voce esta delirando será?
-[[ pergunte mais a ele sobre o que esta conhecendo-&gt; dia 3.3]]
-[[ficar em silencio -&gt; dia 3.5]] 
-[[ pergunte sobre seu amigo -&gt;dia 3.6]] </tw-passagedata><tw-passagedata pid="12" name=" dia 3.2" tags="" position="475,800" size="100,100">Mesmo tentando andar mais rapido as perninhas ligeiras dele te alcanssaram facilmente , e ainda sem estar totalmete proximo a voce ele ja começa a falar de longe &quot; que bom Dr, que bom que encontrei você! Eu estava ansioso para conversar com você, sou nigel e esttou a seu dispor&quot;
+
+&gt;[[ pergunte mais a ele sobre o que esta conhecendo-&gt; dia 3.3]]
+&gt;[[ficar em silencio -&gt; dia 3.5]] 
+&gt;[[ pergunte sobre seu amigo -&gt;dia 3.6]] </tw-passagedata><tw-passagedata pid="12" name=" dia 3.2" tags="" position="475,800" size="100,100">Mesmo tentando andar mais rapido as perninhas ligeiras dele te alcanssaram facilmente , e ainda sem estar totalmete proximo a voce ele ja começa a falar de longe &quot; que bom Dr, que bom que encontrei você! Eu estava ansioso para conversar com você, sou nigel e esttou a seu dispor&quot;
 sobre o que ele está falando, voce esta delirando será?
-[[ pergunte mais a ele sobre o que esta conhecendo-&gt; dia 3.3]]
-[[ ficar em silencio -&gt; dia 3.5]] 
-[[ pergunte sobre seu amigo -&gt;dia 3.6]] </tw-passagedata><tw-passagedata pid="13" name=" dia 3.3" tags="" position="300,975" size="100,100">apos fazer a pergunta, nigel não perdeu tempo e logo comecou a falar &quot;estamos paassando por uma crise aqui, o professor&quot;...&quot; depois de anos de pesquisa, encotrou a joia que é o coração da floresta, ele alegava que seria apenas para documentala em seus registros, porem se apossou dela, e roubou todos os poderes da pedra preciosa&quot;
+
+&gt;[[ pergunte mais a ele sobre o que esta conhecendo-&gt; dia 3.3]]
+&gt;[[ ficar em silencio -&gt; dia 3.5]] 
+&gt;[[ pergunte sobre seu amigo -&gt;dia 3.6]] </tw-passagedata><tw-passagedata pid="13" name=" dia 3.3" tags="" position="300,975" size="100,100">apos fazer a pergunta, nigel não perdeu tempo e logo comecou a falar &quot;estamos paassando por uma crise aqui, o professor&quot;...&quot; depois de anos de pesquisa, encotrou a joia que é o coração da floresta, ele alegava que seria apenas para documentala em seus registros, porem se apossou dela, e roubou todos os poderes da pedra preciosa&quot;
 o que você diz em seguida?
-[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
-[[ onde esta meu amigo?-&gt; dia 3.8]] 
+
+&gt;[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
+&gt;[[ onde esta meu amigo?-&gt; dia 3.8]] 
 </tw-passagedata><tw-passagedata pid="14" name=" dia 3.5" tags="" position="450,975" size="100,100">mesmo com seu silêncio nigel não perde tempo tempo e logo começa a falar &quot;estamos paassando por uma crise aqui, o professor&quot;...&quot; depois de anos de pesquisa, encotrou a joia que é o coração da floresta, ele alegava que seria apenas para documentala em seus registros, porem se apossou dela, e junto todos ospoderes da pedra preciosa&quot;
 o que voce reponde para ele?
-[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
-[[ onde esta meu amigo?-&gt; dia 3.8]] 
+
+&gt;[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
+&gt;[[ onde esta meu amigo?-&gt; dia 3.8]] 
 </tw-passagedata><tw-passagedata pid="15" name="dia 3.6" tags="" position="600,975" size="100,100">&quot;esta falando sobre o ....? ele não está muito longe, precisamos acha-lo logo, pois o estamos paassando por uma crise aqui, o professor&quot;...&quot; depois de anos de pesquisa, encotrou a joia que é o coração da floresta, ele alegava que seria apenas para documentala em seus registros, porem se apossou dela, e junto todos ospoderes da pedra preciosa&quot;
 o que voce reponde para ele?
-[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
+
+&gt;[[ ok, mas o que eu tenho haver com tudo isso? -&gt; 3.7]]
 
 </tw-passagedata><tw-passagedata pid="16" name=" 3.7" tags="" position="375,1175" size="100,100">reza a lenda, quem se apossar da pedra preciosa, se consubira de poderes sombrios colocando jumanji em desarmonia e perigo, apenas voce e o ... podem nos ajudar, mas depressa, não temos muito tempo! após o entardecer do dia 6 caso a pedra não retorne ao seu devido lugar voces dois ficarao aqui para sempre e nossas terras sucumbirao ao fim,  mas lembre-se se quiser do jogo escapar precisam salvar jumanji e seu nome gritar
 rápido voce não tem muito tempo o que fazer?
-[[ ir em busca de seu amigo urgente -&gt;dia 3.9]]
-[[ ficar descansando em alguns arbustos, afinal ainda restam 3 dias -&gt; 3.10]]
-[[ buscar itens que te ajudem a sobreviver -&gt;3.11]]
+
+&gt;[[ ir em busca de seu amigo urgente -&gt;dia 3.9]]
+&gt;[[ ficar descansando em alguns arbustos, afinal ainda restam 3 dias -&gt; 3.10]]
+&gt;[[ buscar itens que te ajudem a sobreviver -&gt;3.11]]
 </tw-passagedata><tw-passagedata pid="17" name=" dia 3.8" tags="" position="625,1175" size="100,100">... isso so voce ira descorbir, precisa o encotra-lo apenas voce e o ... podem nos ajudar, mas depressa, não temos muito tempo! após o entardecer do dia 6 caso a pedra não retorne ao seu devido lugar voces dois ficarao aqui para sempre e nossas terras sucumbirao ao fim, mas lembre-se se quiser do jogo escapar precisam salvar jumanji e seu nome gritar
 rápido voce não tem muito tempo o que fazer?
-[[ ir em busca de seu amigo urgente -&gt;dia 3.9]]
-[[ ficar descansando em alguns arbustos, afinal ainda restam 3 dias -&gt; 3.10]]
-[[ buscar itens que te ajudem a sobreviver -&gt;3.11]]
+
+&gt;[[ ir em busca de seu amigo urgente -&gt;dia 3.9]]
+&gt;[[ ficar descansando em alguns arbustos, afinal ainda restam 3 dias -&gt; 3.10]]
+&gt;[[ buscar itens que te ajudem a sobreviver -&gt;3.11]]
 </tw-passagedata><tw-passagedata pid="18" name="dia 3.9" tags="" position="375,1300" size="100,100">voce assustado agradece por ter eoncrontrado com nigel, mas sabe que precisa correr contra o tempo, e decide ir atras de seu amigo, ele não pode estar muito longe afianl, voce o conhece como ninguem, por onde ele andaria?
-[[... gosta de rios, tenho certeza que está por aqueles lados-&gt;3.12]]
-[[ com certeza ele esta onde acharia mais seguro perto das montanhas -&gt;3.13]]
+
+&gt;[[... gosta de rios, tenho certeza que está por aqueles lados-&gt;3.12]]
+&gt;[[ com certeza ele esta onde acharia mais seguro perto das montanhas -&gt;3.13]]
 
 </tw-passagedata><tw-passagedata pid="19" name=" 3.10" tags="" position="550,1325" size="100,100">sua preguiça foi terrivel, após ter se deitado em arbustos não conhecidos, pegou no sono e só acordou quando sentiu uma ardencia enorme no seu joelho esquerdo, dpois disso viu uma aranha enorme encima de sua barriga, ela picou voce enqaunto dormia, aranha-armadeira
 Você morreu.
 
-[[Voltar para o inicio.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="20" name="3.11" tags="" position="250,1300" size="100,100">voce assustado agradece nigel, mas percebe que precisa correr contra o tempo  que sua segurança é escensial para sobrevivencia, assim poedra pensar em seu amigo mais tarde!
-[[ ir para o riacho mais proximo -&gt;3.12]]
-[[ as montanhas me parem mais seguras, ir para la -&gt;3.13]]
+&gt;[[Voltar para o inicio.-&gt;inicio 1.1]]</tw-passagedata><tw-passagedata pid="20" name="3.11" tags="" position="250,1300" size="100,100">voce assustado agradece nigel, mas percebe que precisa correr contra o tempo  que sua segurança é escensial para sobrevivencia, assim poedra pensar em seu amigo mais tarde!
+
+&gt;[[ ir para o riacho mais proximo -&gt;3.12]]
+&gt;[[ as montanhas me parem mais seguras, ir para la -&gt;3.13]]
 </tw-passagedata><tw-passagedata pid="21" name="3.12" tags="" position="325,1450" size="100,100">chegando no riacho voce não escuta nada alem do barulho das aguas, nem sinal de seu amigo, muito menos de itens que possam te ajudar, voce aproveita as aguas doces para se hidratar, possivelmente a posição do sol indica que seja um pouco mais de 12;00 
 oque voce faz?
-[[ tenho que ir para as montanhas me parece seguro, estou com muita fome -&gt;3.13]]
-[[ preciso andar mais, achar itens que me ajudem -&gt;3.13]]
+
+&gt;[[ tenho que ir para as montanhas me parece seguro, estou com muita fome -&gt;3.13]]
+&gt;[[ preciso andar mais, achar itens que me ajudem -&gt;3.13]]
 
 </tw-passagedata><tw-passagedata pid="22" name=" caçar um alimento que me sustente -.3.14" tags="" position="1075,1500" size="100,100"></tw-passagedata><tw-passagedata pid="23" name="3.13" tags="" position="600,1475" size="100,100">Nas montanhas não ha nenhhum rastro que seu amigo possa ter passado por aqui, com uma sorte estarnha, voce econtra uma faca estilo canivete, agora sabe o que fazer]
 VOCE ADQUIRIU UM CANIVETE
-[[ ir caçar algo que relamente o sustente sua fome-&gt;3.14]]
+
+&gt;[[ ir caçar algo que relamente o sustente sua fome-&gt;3.14]]
 </tw-passagedata><tw-passagedata pid="24" name="3.14" tags="" position="900,1400" size="100,100">CHECK POINT
 Ao sair em uma jornada você segue por um longo tempo e acaba achando uma pequena cabana aparentemente não está abandonada.. Por ter andado muito tempo você parece um pouco cansado e já sente mais fome. Pode ser que tenha alguém ali. Seria seu amigo?
-[[ Ir na floresta atrás de uma galinha e continuar andando-&gt;3.16]]
-[[ Bater na porta da cabana -&gt; 3.15]]
+
+&gt;[[ Ir na floresta atrás de uma galinha e continuar andando-&gt;3.16]]
+&gt;[[ Bater na porta da cabana -&gt; 3.15]]
 </tw-passagedata><tw-passagedata pid="25" name=" 3.15" tags="" position="400,1725" size="100,100">Ao chegar perto da cabana você começa a escutar barulhos as &quot;portas estão abertas&quot;, então você bate na porta algumas vezes porém sem resposta da parte de dentro.
 Já está escuro lá fora, e alguns lobos começam a uivar na floresta.
-[[ Entrar silenciosamente na cabana-&gt; 3.17]]
-[[ Não entrar na casa de um estranho e achar outro lugar para passar a tarde -&gt;3.18]]
+
+&gt;[[ Entrar silenciosamente na cabana-&gt; 3.17]]
+&gt;[[ Não entrar na casa de um estranho e achar outro lugar para passar a tarde -&gt;3.18]]
 </tw-passagedata><tw-passagedata pid="26" name="3.16" tags="" position="675,1700" size="100,100">Com o canivete que encontrou da primeira caçada, e após ter pego um pouco a prática voce pegou 2 coelhos,, assim você descansa e se alimenta nesse fim de tarde e está na hora de ir para a cabana.
-[[ Voltar para a cabana -&gt; 3.15]]
+
+&gt;[[ Voltar para a cabana -&gt; 3.15]]
 </tw-passagedata><tw-passagedata pid="27" name=" 3.17" tags="" position="425,1875" size="100,100">Ao abrir a porta você acaba fazendo um barulho muito alto, talvez está casa seja meio velha, o barulho acaba acordando um senhor que vem correndo em direção à porta de entrada.
 MULHER: &quot;QUEM É VOCÊ? O QUE FAZ AQUI?&quot;
-[[ partir diretamente para briga -&gt;3.19]].
-[[&quot;Estou atrás de ajuda, não fique nervosa, vamos conversar.&quot; -&gt;3.20]]
-[[</tw-passagedata><tw-passagedata pid="28" name="3.18" tags="" position="575,1875" size="100,100">Ao sair da cabana você vai em direção ao riacho para tentar encontrar alguma cabana vizinha, porém sem sorte, então acaba descansando por ali mesmo.
+
+&gt;[[ partir diretamente para briga -&gt;3.19]].
+&gt;[[&quot;Estou atrás de ajuda, não fique nervosa, vamos conversar.&quot; -&gt;3.20]]
+</tw-passagedata><tw-passagedata pid="28" name="3.18" tags="" position="575,1875" size="100,100">Ao sair da cabana você vai em direção ao riacho para tentar encontrar alguma cabana vizinha, porém sem sorte, então acaba descansando por ali mesmo.
 No meio do escurecer você acorda com uivos muito barulhentos ao seu redor, e percebe que estás cercado por 2 lobos claramente com fome.
-[[Usar o canivete para se defender -&gt;3.18.1]]
-[[Ir se afastando e correr em direção a cabana -&gt;3.18.2]]</tw-passagedata><tw-passagedata pid="29" name="3.19" tags="" position="300,2025" size="100,100">Você corre em direção a mulher tentando atingi-la com um soco, mas ela acaba desviando, mostrando incríveis reflexos.
+
+&gt;[[Usar o canivete para se defender -&gt;3.18.1]]
+&gt;[[Ir se afastando e correr em direção a cabana -&gt;3.18.2]]</tw-passagedata><tw-passagedata pid="29" name="3.19" tags="" position="300,2025" size="100,100">Você corre em direção a mulher tentando atingi-la com um soco, mas ela acaba desviando, mostrando incríveis reflexos.
 Mulher: &quot;Você invadiu a cabana da mulher errada, vai se arrepender por isso!&quot;
 A mulher pega então uma frigideira, e lhe atinge com uma forte pancada no queixo.
 Você morreu
-[[Voltar para o checkpoint.-&gt;3.14]]
+
+&gt;[[Voltar para o checkpoint.-&gt;3.14]]
 </tw-passagedata><tw-passagedata pid="30" name="3.20" tags="" position="500,2025" size="100,100">Mulher: &quot;Você tem alguma arma aí?&quot;
 Você: &quot;Apenas um canivete velho, mas sem fio, quer que eu o deixe aqui na entrada?.&quot;
 Mulher: &quot;Faça isso mesmo... Depois pode se sentar ali no sofá, imagino que tenha algo para me perguntar.&quot;
-[[Ir para cima da mulher no momento que ela vira de costas. -&gt;3.19]]
-[[Sentar-se e perguntar a ela se pode lhe ajudar com alguns itens. -&gt;3.21]]</tw-passagedata><tw-passagedata pid="31" name="3.18.1" tags="" position="700,1975" size="100,100">Por estar sem flechas você usaria o próprio arco para tentar se defender dos múltiplos ataques dos lobos, você consegue desviar de alguns ataques batendo nos lobos com seu arco, porém em um ataque surpresa você coloca o arco na frente e acaba sendo abocanhado pelo lobo e se quebra.
+
+&gt;[[Ir para cima da mulher no momento que ela vira de costas. -&gt;3.19]]
+&gt;[[Sentar-se e perguntar a ela se pode lhe ajudar com alguns itens. -&gt;3.21]]</tw-passagedata><tw-passagedata pid="31" name="3.18.1" tags="" position="700,1975" size="100,100">Por estar sem flechas você usaria o próprio arco para tentar se defender dos múltiplos ataques dos lobos, você consegue desviar de alguns ataques batendo nos lobos com seu arco, porém em um ataque surpresa você coloca o arco na frente e acaba sendo abocanhado pelo lobo e se quebra.
 Após um logo embate sem armamento dessa vez, os lobos acabam conseguindo o que querem e você vira comida de lobo
-[[Voltar para o último Checkpoint -&gt;3.14]]</tw-passagedata><tw-passagedata pid="32" name="3.18.2" tags="" position="825,1975" size="100,100">[if canivete]
+
+&gt;[[Voltar para o último Checkpoint -&gt;3.14]]</tw-passagedata><tw-passagedata pid="32" name="3.18.2" tags="" position="825,1975" size="100,100">[if canivete]
 ...
 [else]
 A cabana se encontra meio longe, e mesmo correndo o mais rápido que você podia, os lobos conseguem chegar até você, que não consegue se defender apenas com um canivete. Você morreu!
 [continue]
-[[Voltar para o checkpoint. -&gt;3.14]] </tw-passagedata><tw-passagedata pid="33" name="3.21" tags="" position="500,2150" size="100,100">Caminhando até o sofá, você se depara que ela não demonstra ser com um PNJ( personagem não jogavel), então acaba esquecendo dos itens e se interessando pela história dessa mulher misteriosa.
+
+&gt;[[Voltar para o checkpoint. -&gt;3.14]] </tw-passagedata><tw-passagedata pid="33" name="3.21" tags="" position="500,2150" size="100,100">Caminhando até o sofá, você se depara que ela não demonstra ser com um PNJ( personagem não jogavel), então acaba esquecendo dos itens e se interessando pela história dessa mulher misteriosa.
 Você: &quot;Você sabe porque está aqui? como chegou até aqui?
 Mulher: &quot;Bom, me chamo Jenifer, primeiramente, e acredito que ja deve saber como funciona este mundo....&quot;
 Você: &quot;cheguei faz 2 dias, não tenho muita noção de como funciona....&quot;
 Jenifer: &quot;sente-se nesse sofá, tenho algumas coisas para te contar&quot;
-[[sentar-se no sofá -&gt; 3.22]]
+
+&gt;[[sentar-se no sofá -&gt; 3.22]]
 </tw-passagedata><tw-passagedata pid="34" name=" 3.22" tags="" position="500,2275" size="100,100">Jenifer começa a te contar como ela entrou nesse mundo, e como ela ainda não conseguiu escapar, te falou de todos os desafios que passsou, aparentemente ela já está em jumani a 2 meses, porém ela fala de um jeito estranho, com referêcias desconhecidas por você.
 você prefere:
-[[ continuar escutando Jenifer -&gt; 3.23]]
-[[ interromper ela perguntando sobre os itens -&gt;3.24]]
+
+&gt;[[ continuar escutando Jenifer -&gt; 3.23]]
+&gt;[[ interromper ela perguntando sobre os itens -&gt;3.24]]
 </tw-passagedata><tw-passagedata pid="35" name=" 3.23" tags="" position="350,2350" size="100,100">Jenifer: &quot;entrei neste mundo por acaso, estava discando no meu telefone algunas números aleatorios da lista telefonica, para matar o tempo, quando percebi o fone do gancho estava tremendo e o sinal da linha e iniciou em uma a discagem de número aleatória descontrolada, foi ai que me sugou para dentro desse universo&quot;
-[[ discagem? telefone? quem usa isso hoje em dia? tem algo de errado -&gt;3.25]]
-[[sabe me dizer onde estão os itens que irão me ajudar?-&gt;3.24]]</tw-passagedata><tw-passagedata pid="36" name="3.24" tags="" position="625,2375" size="100,100">No meio da história, você a interrompe perguntando sobre itens que poderiam te ajudar nessa jornada, feliz em ajudar ela te oferece uma corda e machado </tw-passagedata><tw-passagedata pid="37" name="3.25" tags="" position="250,2450" size="100,100">percebendo que os comentários de jenifer são desatualizados você decide questiona-la em relação a idade dela, fisicamente ela parece muito jovem, não passa dos 20,
+
+&gt;[[ discagem? telefone? quem usa isso hoje em dia? tem algo de errado -&gt;3.25]]
+&gt;[[sabe me dizer onde estão os itens que irão me ajudar?-&gt;3.24]]</tw-passagedata><tw-passagedata pid="36" name="3.24" tags="" position="625,2375" size="100,100">No meio da história, você a interrompe perguntando sobre itens que poderiam te ajudar nessa jornada, feliz em ajudar ela te oferece uma corda e machado </tw-passagedata><tw-passagedata pid="37" name="3.25" tags="" position="250,2450" size="100,100">percebendo que os comentários de jenifer são desatualizados você decide questiona-la em relação a idade dela, fisicamente ela parece muito jovem, não passa dos 20,
 sem ser muito indelicado você fala:
-[[Em qual ano você nasceu?-&gt;3.27]]
-[[ Quantos anos você tem? -&gt;3.28]]
+&gt;[[Em qual ano você nasceu?-&gt;3.27]]
+&gt;[[ Quantos anos você tem? -&gt;3.28]]
 </tw-passagedata><tw-passagedata pid="38" name="3.26" tags="" position="625,2500" size="100,100">Posso te ajudar apenas com</tw-passagedata><tw-passagedata pid="39" name="3.28" tags="" position="475,2600" size="100,100">Jenifer sem exitar responde, &quot;não é obvio? tenho a idade da xuxa, 22 anos, ou vai me dizer que aparento ser mais velha&quot;. Você se espanta com essa resposta, a xuxa tem 61 anos atualmente,  ligandando a forma com que ela se expressa e a referencia que ela usou voce decide perguntar em que ano ela acha que está
-[[ Você acha que estamos em qual ano jenifer?-&gt;3.39]]
+
+&gt;[[ Você acha que estamos em qual ano jenifer?-&gt;3.39]]
 </tw-passagedata><tw-passagedata pid="40" name="3.27" tags="" position="250,2625" size="100,100">Jenifer sem exitar, responde, 1985. Você se espanta com essa resposta, e agora faz sentido,  ligandando a forma com que ela se expressa e a referencia que ela usou você decide perguntar em que ano ela acha que está
-[[ estamos em qual ano jenifer-&gt;3.39]]
+
+&gt;[[ estamos em qual ano jenifer-&gt;3.39]]
 </tw-passagedata><tw-passagedata pid="41" name="3.39" tags="" position="375,2750" size="100,100">Jenifer: &quot;Meus deus, você só pode estar maluco né, estamos em 1985&quot;
 Você: &quot;você disse que estava apenas 2 meses no jogo, mas estamos em 2024&quot;
 Nesse momento, jenifer fica em choque, o tempo dentro deste universo passa muito devagar... isso só te mostra o quanto você deve correr para encotrar seu amigo, mas está escurecendo você precisa: 
-[[ pedir para ela se pode repousar hoje e amanha sair pela manha-&gt;3.41]]
-[[ agradecer pelas explicações e sair a noite floresta a dentro -&gt;3.40]]
+&gt;[[ pedir para ela se pode repousar hoje e amanha sair pela manha-&gt;3.41]]
+&gt;[[ agradecer pelas explicações e sair a noite floresta a dentro -&gt;3.40]]
 
 </tw-passagedata><tw-passagedata pid="42" name="3.40" tags="" position="75,2875" size="100,100">Após encerrar a consversa, você pega seus itens e agradece pela ajuda, ao sair pela porta escuta um som assustador mas não da muita bola... andando um pouco mais na floresta escura sente que algo está te seguindo. Você foi atacado por um leopardo, está gravemente ferido.]
 VOCÊ MORREU.
-[[voltar para o checkpoint -&gt;3.14]]</tw-passagedata><tw-passagedata pid="43" name="3.41" tags="" position="575,2850" size="100,100"></tw-passagedata><tw-passagedata pid="44" name="Capa" tags="" position="275,50" size="100,100">{embed image: &#39;capa.png&#39;}
+&gt;[[voltar para o checkpoint -&gt;3.14]]</tw-passagedata><tw-passagedata pid="43" name="3.41" tags="" position="575,2850" size="100,100"></tw-passagedata><tw-passagedata pid="44" name="Capa" tags="" position="275,50" size="100,100">{embed image: &#39;https://ecos-da-floresta.feira-de-jogos.dev.br/abertura.png&#39;}
 
-&gt; [[Apresentação]]</tw-passagedata><tw-passagedata pid="45" name="Apresentação" tags="" position="525,25" size="100,100">Premissa do jogo...
+&gt; [[Apresentação]]
+
+[JavaScript]
+const audioObj = document.createElement(&#39;audio&#39;)
+audioObj.setAttribute(&#39;id&#39;, &#39;conversa&#39;)
+audioObj.setAttribute(&#39;autoplay&#39;, &#39;true&#39;)
+document.body.appendChild(audioObj)
+[continued]</tw-passagedata><tw-passagedata pid="45" name="Apresentação" tags="" position="525,25" size="100,100">Premissa do jogo...
+
+Escolha a sala: {text input for: &#39;sala&#39;}
 
 &gt; [[Início]] </tw-passagedata></tw-storydata></html>
