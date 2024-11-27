@@ -309,7 +309,13 @@ Ela então, permitiu que você dormisse no sofá daquela noite. Mas ja é seu 4�
 
 Escolha de sala: {text input for: &#39;sala&#39;}
 
-&gt; [[Início]]</tw-passagedata><tw-passagedata pid="33" name="Capa" tags="" position="275,50" size="100,100">{embed image: &#39;capa.png&#39;}
+&gt; [[Início]]</tw-passagedata><tw-passagedata pid="33" name="Capa" tags="" position="275,50" size="100,100">produto: 16 
+tijolinhos: 100
+googleclientID: 811052905452-vpn0md6u8degvf354hpjdu4jnl8k0q99.apps.googleusercontent.com
+--
+{embed image: &#39;https://ecos-da-floresta.feira-de-jogos.dev.br/abertura.png&#39;}
+
+{embed image: &#39;capa.png&#39;}
 
 [JavaScript]
 const audioObj = document.createElement(&#39;audio&#39;)
@@ -514,4 +520,73 @@ Você morreu!</tw-passagedata><tw-passagedata pid="51" name="4.6" tags="" positi
 &gt;[[Voltar para o CHEK POINT -&gt;4.0]]</tw-passagedata><tw-passagedata pid="57" name="4.13" tags="" position="575,3725" size="100,100"></tw-passagedata><tw-passagedata pid="58" name="4.14" tags="" position="450,3725" size="100,100"></tw-passagedata><tw-passagedata pid="59" name="4.15" tags="" position="325,3725" size="100,100"></tw-passagedata><tw-passagedata pid="60" name="4.9" tags="" position="325,3475" size="100,100">Você até tentou seguir sozinho pelo seu caminho, mas após horas sem saber por onde ir e andando em circulos, o sol ja se pôs e você está cansado, além da fome que contagia seu corpo. Você decide:
 
 &gt;[[Procurar um alimento e descansar -&gt;4.11]]
-&gt;[[Deitar para dormir agora -&gt;4.12]] </tw-passagedata></tw-storydata></html>
+&gt;[[Deitar para dormir agora -&gt;4.12]] </tw-passagedata><tw-passagedata pid="61" name="FINAL FELIZ" tags="" position="725,3750" size="100,100">Faça o login no Google para adicionar TJL${tijolinhos} de crédito.
+
+[JavaScript]
+window.setup = {}
+
+setup.loadError = function (oError) {
+  throw new URIError(
+    &#39;The script &#39; + oError.target.src + &quot; didn&#39;t load correctly.&quot;
+  )
+}
+
+setup.loadScript = function (url, onloadFunction) {
+  const newScript = document.createElement(&#39;script&#39;)
+  newScript.onerror = setup.loadError
+  if (onloadFunction) {
+    newScript.onload = onloadFunction
+  }
+  document.head.appendChild(newScript)
+  newScript.async = true
+  newScript.src = url
+}
+
+setup.loadScript(&#39;https://accounts.google.com/gsi/client&#39;, () =&gt; {
+  google.accounts.id.initialize({
+    client_id: engine.state.get(&#39;GoogleClientID&#39;),
+    callback: (res) =&gt; {
+      if (res.error) {
+        console.error(res.error)
+      } else {
+        const url = &#39;https://feira-de-jogos.dev.br/api/v2/credit&#39;
+        const options = {
+          method: &#39;POST&#39;,
+          headers: {
+            &#39;Accept&#39;: &#39;application/json&#39;,
+            &#39;Authorization&#39;: `Bearer ${res.credential}`,
+            &#39;Content-Type&#39;: &#39;application/json&#39;
+          },
+          body: JSON.stringify({
+            product: engine.state.get(&#39;produto&#39;),
+            value: engine.state.get(&#39;tijolinhos&#39;)
+          })
+        }
+        const req = new Request(url, options)
+        
+        fetch(req)
+          .then((response) =&gt; {
+            if (response.ok) {
+              alert(&quot;Crédito realizado com sucesso!&quot;)
+              console.log(response.status)
+            } else {
+              if (response.status == 429){
+                alert(&quot;Falha: operação duplicada.&quot;)
+              } else {
+                alert(&quot;Erro ao realizar operação de crédito.&quot;)
+              }
+              console.error(response)
+            }
+          }
+        )
+      }
+    },
+  })
+
+  google.accounts.id.prompt((notification) =&gt; {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      google.accounts.id.prompt()
+    }
+  })
+})
+[continued]</tw-passagedata><tw-passagedata pid="62" name="FINAL TRISTE" tags="" position="875,3725" size="100,100"></tw-passagedata></tw-storydata></html>
