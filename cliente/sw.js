@@ -4,8 +4,8 @@ const cacheName = 'cache-v1.0.0'
 // List the files to precache
 const precacheResources = [
   './',
-  '/index.html',
-  'abertura.png'
+  './index.html',
+  './abertura.png'
 ]
 
 self.addEventListener('install', (event) => {
